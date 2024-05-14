@@ -1,76 +1,179 @@
+<head>
+    <meta charset="UTF-8">
+    <script src='https://cdn.plot.ly/plotly-latest.min.js' charset='utf-8'></script>
+    <script src='https://unpkg.com/dayjs@1.8.21/dayjs.min.js'></script>
+</head>
+
+<style>
+dl {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+}
+dt {
+    width: 30%;
+}
+dd {
+    width: 60%;
+}
+</style>
+
 <h1>GPS</h1>
 
 <h2>Source</h2>
+<div>
+    <h3>Serial</h3>
+    <form>
+        <label>Baud Rate:</label>
+        <select id="baudrate">
+            <option value="9600">9600</option>
+            <option value="115200" selected>115200</option>
+        </select>
+        <button type="button" id="btnOpen"  onclick="btnOpenClick()"  >Open</button>
+        <button type="button" id="btnClose" onclick="btnCloseClick()" >Close</button>
+    </form>
+    <h3>File</h3>
+    <form>
+        <input type="file" id="lstFile" multiple />
+        <button type="button" id="btnLoad" onclick="btnLoadClick()">Load</button>
+    </form>
+</div>
 
-<form>
-    <label>Baud Rate:</label>
-    <select id="baudrate">
-        <option value="9600">9600</option>
-        <option value="115200" selected>115200</option>
-    </select>
-    <button type="button" id="btnOpen"  onclick="btnOpenClick()"  >Open</button>
-    <button type="button" id="btnClose" onclick="btnCloseClick()" >Close</button>
-</form>
+<div>
+    <h2>Navigation</h2>
+    <dl>
+        <dt>Date</dt>
+        <dd id="txtDate">N/A</dd>
+        <dt>Time</dt>
+        <dd id="txtTime">N/A</dd>
+        <dt>Latitude</dt>
+        <dd id="txtLatitude">N/A</dd>
+        <dt>Longitude</dt>
+        <dd id="txtLongitude">N/A</dd>
+        <dt>Altitude</dt>
+        <dd id="txtAltitude">N/A</dd>
+        <dt>Geoid</dt>
+        <dd id="txtGeoid">N/A</dd>
+        <dt>Speed[Knot]</dt>
+        <dd id="txtKnot">N/A</dd>
+        <dt>Speed[km/h]</dt>
+        <dd id="txtKmh">N/A</dd>
+        <dt>Direction</dt>
+        <dd id="txtDirection">N/A</dd>
+        <dt>Degree</dt>
+        <dd id="txtDegree">N/A</dd>
+        <dt>Diff</dt>
+        <dd id="txtDiff">N/A</dd>
+        <dt>Fix Mode</dt>
+        <dd id="txtFixMode">N/A</dd>
+        <dt>2G/3D</dt>
+        <dd id="txt2D3D">N/A</dd>
+        <dt>Age</dt>
+        <dd id="txtAge">N/A</dd>
+        <dt>Used Satellites</dt>
+        <dd id="txtSatellites">N/A</dd>
+        <dt>HDOP</dt>
+        <dd id="txtHDOP">N/A</dd>
+        <dt>VDOP</dt>
+        <dd id="txtVDOP">N/A</dd></dd>
+        <dt>PDOP</dt>
+        <dd id="txtPDOP">N/A</dd>
+    </dl>
+</div>
 
-<form>
-    <input type="file" id="lstFile" multiple />
-    <button type="button" id="btnLoad" onclick="btnLoadClick()">Load</button>
-</form>
+<div>
+    <h2>Satellites</h2>
 
-<h2>Navigation</h2>
-<form>
-    <label>Date</label>
-    <input type="text" id="txtDate"/><br />
-    <label>Time</label>
-    <input type="text" id="txtTime"/><br />
-    <label>Latitude</label>
-    <input type="text" id="txtLatitude"/><br />
-    <label>Longitude</label>
-    <input type="text" id="txtLongitude"/><br />
-    <label>Altitude</label>
-    <input type="number" id="txtAltitude"/><br />
-    <label>Geoid</label>
-    <input type="number" id="txtGeoid"/><br />
-    <label>Speed[Knot]</label>
-    <input type="number" id="txtKnot"/><br />
-    <label>Speed[km/h]</label>
-    <input type="number" id="txtKmh"/><br />
-    <label>Direction</label>
-    <input type="number" id="txtDirection"/><br />
-    <label>Degree</label>
-    <input type="number" id="txtDegree"/><br />
-    <label>Diff</label>
-    <input type="number" id="txtDiff"/><br />
-    <label>Fix Mode</label>
-    <input type="string" id="txtFixMode"/><br />
-    <label>2G/3D</label>
-    <input type="string" id="txt2D3D"/><br />
-    <label>Age</label>
-    <input type="number" id="txtAge"/><br />
-    <label>HDOP</label>
-    <input type="number" id="txtHDOP"/><br />
-    <label>VDOP</label>
-    <input type="number" id="txtVDOP"/><br />
-    <label>PDOP</label>
-    <input type="number" id="txtPDOP"/><br />
-    <label>Used Satellites</label>
-    <input type="string" id="txtSatellites"/><br />
-</form>
+    <div id='myDiv'></div>
 
-<h2>Satellites</h2>
-
-<form>
-    <label>Satellite Views</label>
-    <input type="number" id="txtViews"/><br />
-</form>
-
+    <table>
+        <thead>
+            <tr>
+                <th>SID</th>
+                <th>Azim</th>
+                <th>Elv</th>
+                <th width="100%">Signal</th>
+            </tr>
+        </thead>
+        <tbody id="tbSat">
+        </tbody>
+    </table>
+</div>
 
 <script>
 
+const types = ['GN',    'GP',    'GL',   'GA',   'GB',  'GQ',     'BD'];
+const colors = ['gray', 'green', 'cyan', 'blue', 'red', 'purple', 'yellow'];
+const gsas = {};
+const gsvs = {};
+const items = {};
+const data = [];
+for (i = 0; i < types.length; i++) {
+    const type = types[i];
+    const color = colors[i];
+    gsas[type] = {};
+    gsvs[type] = {};
+    const item = {
+        type: "scatterpolar", mode: "markers",
+        marker: {color: color, symbol: "dot", size: 5 },
+        hovertemplate:'%{text}',
+        name: type,
+    };
+    data.push(item);
+    items[type] = item;
+}
+
+const layout = {
+    autosize: true, width: null, height: null, showlegend: true, hovermode: "x unified",
+    polar: {
+      radialaxis:  { tickfont: { size: 12, color: "#ff0000" }, range: [0,100] },
+      angularaxis: { tickfont: { size: 12, color: "#0000ff" }, ticksuffix: "度" }
+    },
+}
+
+Plotly.newPlot('myDiv', data, layout)
+
+// Plotlyのグラフの外でホバーした値を受けとる
+const myPlot = document.getElementById('myDiv');
+myPlot.on('plotly_hover', data => {
+  s = `${data.points[0].text}`
+  document.getElementById("hoverData").innerHTML=s
+})
+
 var port;
 
-var gsas = { GN:{}, GP:{}, GL:{}, GA:{}, GB:{}, GQ:{}, BD:{} }
-var gsvs = { GN:{}, GP:{}, GL:{}, GA:{}, GB:{}, GQ:{}, BD:{} }
+function createTd(sid) {
+    const tdSID = document.createElement('td')
+    tdSID.innerText = sid
+
+    const tdAzim = document.createElement('td')
+    tdAzim.setAttribute('id', 'td' + sid + 'Azim')
+    tdAzim.setAttribute('align', 'right')
+
+    const tdElv = document.createElement('td')
+    tdElv.setAttribute('id', 'td' + sid + 'Elv')
+    tdElv.setAttribute('align', 'right')
+    
+    const tdSignal = document.createElement('td')
+    tdSignal.setAttribute('id', 'td' + sid + 'Signal')
+    tdSignal.setAttribute('style', 'background-color: lightgray;')
+
+    const span = document.createElement('span')
+    span.setAttribute('id', 'span' + sid + 'Signal')
+    span.setAttribute('style', 'width: 50%; display: inline-block; background-color: lime;')
+    span.innerText = '0'
+    tdSignal.appendChild(span)
+
+    const tr = document.createElement('tr');
+    tr.setAttribute('id', 'tr' + sid)
+    tr.appendChild(tdSID)
+    tr.appendChild(tdAzim)
+    tr.appendChild(tdElv)
+    tr.appendChild(tdSignal)
+
+    const tb = document.getElementById('tbSat')
+    tb.appendChild(tr)
+}
 
 navigator.serial.addEventListener("connect", (e) => {
     console.log("Connected! target=" + e.target)
@@ -106,9 +209,13 @@ async function btnLoadClick() {
 
     const reader = new FileReader();
     reader.onload = () => {
-        reader.result.split('\n').forEach(s => {
+        console.log("onload")
+        reader.result.split('\r').forEach(s => {
+            s = s.trim();
             if (s.startsWith('$')) {
                 onMessage(s)
+            } else {
+                console.log(s)
             }
         });        
     };
@@ -118,22 +225,29 @@ async function btnLoadClick() {
     reader.readAsText(file);
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function readLoop() {
     buffer = new Uint8Array(0)
     const reader = port.readable.getReader();
     while (true) {
         const { value, done } = await reader.read();
         if (done) {
+            console.log('done');
             reader.releaseLock();
             break;
         }
 
+        console.log('readed');
         buffer = concatTypedArrays(buffer, value)
         if (buffer.at(-1) == 10) {
             const s = new TextDecoder().decode(buffer)
             buffer = new Uint8Array(0)
             if (s.startsWith('$')) {
                 onMessage(s)
+                await sleep(10)
             }
         }
     }
@@ -144,12 +258,18 @@ function onMessage(message) {
     const type  = items[0].substring(3, 6)
 
     switch(type) {
+        case 'TXT':
+            //console.log(message);
+            onTXT(items)
+            break
         case 'GGA':
             //console.log(message);
             onGGA(items)
             break
-        case 'GGL':
-            break;
+        case 'GLL':
+            //console.log(message);
+            onGLL(items)
+            break
         case 'GSA':
             //console.log(message);
             onGSA(items);
@@ -163,11 +283,15 @@ function onMessage(message) {
             onRMC(items)
             break
         case 'VTG':
-            console.log(message);
+            //console.log(message);
             onVTG(items)
             break
+        case 'ZDA':
+            //console.log(message);
+            onZDA(items)
+            break
         default:
-            //console.log(type)
+            console.log(message);
             break
     }
 }
@@ -209,67 +333,138 @@ function to_diff(item1, item2) {
     return diff
 }
 
+function updateGSV() {
+    const tb = document.getElementById('tbSat')
+    while (tb.firstChild) {
+        tb.removeChild ( tb.firstChild );
+    }
+
+    for (i = 0; i < types.length; i++) {
+        var type = types[i];
+
+        items[type].r = [];
+        items[type].theta = [];
+        items[type].text = [];
+
+        for (var id in gsvs[type]) {            
+            var azim = gsvs[type][id]['azim']
+            var elv = gsvs[type][id]['elv']
+            var cnr = gsvs[type][id]['cnr']
+            var li = document.createElement('li');
+
+            items[type].r.push(azim);
+            items[type].theta.push(elv);
+            items[type].text.push(`name, azim, elev: ${id},${azim},${elv}`);
+
+            createTd(id)
+            document.getElementById('td' + id + 'Azim').innerText = azim
+            document.getElementById('td' + id + 'Elv').innerText = elv
+            document.getElementById('span' + id + 'Signal').innerText = cnr
+            document.getElementById('span' + id + 'Signal').style.width = cnr + '%'
+        }
+        gsvs[type] = {}
+    }
+    Plotly.newPlot('myDiv', data, layout)   
+}
+
+function updateGSA() {
+    var ul = document.getElementById("lstGSA")
+    while (ul.firstChild) {
+        ul.removeChild ( ul.firstChild );
+    }
+
+    for (i = 0; i < types.length; i++) {
+        var type = types[i];
+
+        for (var id in gsas[type]) {
+            var li = document.createElement('li');
+            li.innerHTML = id
+            ul.appendChild(li);
+        }
+        gsas[type] = {}
+    }    
+}
+
+function onTXT(items) {
+    const tracker = items[0].substring(1, 3)
+
+//    updateGSA()
+    updateGSV()
+}
+
 function onGSV(items) {
     const tracker = items[0].substring(1, 3)
     const sentenses = Number(items[1])
     const sentenseNo = Number(items[2])
     const views = Number(items[3].split('*')[0])
-    document.getElementById("txtViews").value = views
 
     const slen = (items.length - 4)/4
     for (var i=0; i<slen; i++) {
         const offset = 4 + 4*i
         const id = tracker + items[offset]
-        const gyokaku = Number(items[offset + 1])
-        const houikaku = Number(items[offset + 2])
+        const azim = Number(items[offset + 1])
+        const elv = Number(items[offset + 2])
         const cnr = Number(items[offset + 3].split('*')[0])
-        gsvs[tracker][id] = { gyokaku: gyokaku, houikaku: houikaku, cnr: cnr}
+        gsvs[tracker][id] = { azim: azim, elv: elv, cnr: cnr}
     }
 }
 
 function onGSA(items) {
     const tracker = items[0].substring(1, 3)
     const mode = items[1]
-    document.getElementById("txt2D3D").value = items[2]
+    document.getElementById("txt2D3D").textContent = items[2]
 
     const offset = 3
     for(var i=0; i<12; i++) {
-        const id = tracker + items[offset + i]
-        gsas[tracker][id] = { use: true }
+        const item = items[offset + i]
+        if (item != '') {
+            const id = tracker + item
+            gsas[tracker][id] = { use: true }
+        }
     }
 
-    document.getElementById("txtPDOP").value = Number(items[3 + 12])
-    document.getElementById("txtHDOP").value = Number(items[3 + 12 + 1])
-    document.getElementById("txtVDOP").value = Number(items[3 + 12 + 2].split('*')[0])
+    document.getElementById("txtPDOP").textContent = Number(items[3 + 12])
+    document.getElementById("txtHDOP").textContent = Number(items[3 + 12 + 1])
+    document.getElementById("txtVDOP").textContent = Number(items[3 + 12 + 2].split('*')[0])
 }
 
 function onGGA(items) {
     const status = items[6]
     if (status != '0') {
-        document.getElementById("txtTime").value = to_time(items[1])
-        document.getElementById("txtLatitude").value  = to_degree(items[2], items[3])
-        document.getElementById("txtLongitude").value = to_degree(items[4], items[5])
-        document.getElementById("txtSatellites").value = items[7]
-        document.getElementById("txtHDOP").value = Number(items[8])
-        document.getElementById("txtAltitude").value = to_altitude(items[9], items[10])
-        document.getElementById("txtGeoid").value = to_altitude(items[11], items[12])
-        document.getElementById("txtAge").value = Number(items[13])
+        document.getElementById("txtTime").textContent = to_time(items[1])
+        document.getElementById("txtLatitude").textContent  = to_degree(items[2], items[3])
+        document.getElementById("txtLongitude").textContent = to_degree(items[4], items[5])
+        document.getElementById("txtSatellites").textContent = items[7]
+        document.getElementById("txtHDOP").textContent = Number(items[8])
+        document.getElementById("txtAltitude").textContent = to_altitude(items[9], items[10])
+        document.getElementById("txtGeoid").textContent = to_altitude(items[11], items[12])
+        document.getElementById("txtAge").textContent = Number(items[13])
+    }
+}
+
+function onGLL(items) {
+    const tracker = items[0].substring(1, 3)
+    const status = items[6]
+    if (status == 'A') {
+        document.getElementById("txtLatitude").textContent  = to_degree(items[1], items[2])
+        document.getElementById("txtLongitude").textContent = to_degree(items[3], items[4])
+        document.getElementById("txtTime").textContent = to_time(items[5])
     }
 }
 
 function onRMC(items) {
     const status = items[2]
-    document.getElementById("txtTime").value = to_time(items[1])
-    document.getElementById("txtDate").value = to_date(items[9])
+    document.getElementById("txtTime").textContent = to_time(items[1])
+    document.getElementById("txtDate").textContent = to_date(items[9])
 
     if (status == 'A') {
-        document.getElementById("txtLatitude").value  = to_degree(items[3], items[4])
-        document.getElementById("txtLongitude").value = to_degree(items[5], items[6])
-        document.getElementById("txtKnot").value = Number(items[7])
-        document.getElementById("txtDirection").value = Number(items[8])
-        document.getElementById("txtDegree").value = Number(items[10])
-        document.getElementById("txtDiff").value = to_diff(items[11], items[12])
-        document.getElementById("txtFixMode").value = items[12].split('*')[0]
+        document.getElementById("txtLatitude").textContent  = to_degree(items[3], items[4])
+        document.getElementById("txtLongitude").textContent = to_degree(items[5], items[6])
+        document.getElementById("txtKnot").textContent = Number(items[7])
+        document.getElementById("txtDirection").textContent = Number(items[8])
+        document.getElementById("txtDegree").textContent = Number(items[10])
+        document.getElementById("txtDiff").textContent = to_diff(items[11], items[12])
+        document.getElementById("txtFixMode").textContent = items[12].split('*')[0]
     }
 }
 
@@ -279,9 +474,15 @@ function onVTG(items) {
     if (mode != 'M') {
         const trueNorth = Number(items[1])
         const magNorth = Number(items[3])
-        document.getElementById("txtKnot").value = Number(items[5])
-        document.getElementById("txtKmh").value = Number(items[7])
+        document.getElementById("txtKnot").textContent = Number(items[5])
+        document.getElementById("txtKmh").textContent = Number(items[7])
     }
+}
+
+function onZDA(items) {
+    const tracker = items[0].substring(1, 3)
+    document.getElementById("txtTime").textContent = to_time(items[1])
+    document.getElementById("txtDate").textContent =  items[4] + '-' + items[3] + "-" + items[2]
 }
 
 function concatTypedArrays(a, b) { // a, b TypedArray of same type
