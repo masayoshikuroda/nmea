@@ -84,7 +84,7 @@ dd {
 <div>
     <h2>Satellites</h2>
 
-    <div id='myDiv'></div>
+    <div id='divPolar'></div>
 
     <table>
         <thead>
@@ -131,9 +131,8 @@ const layout = {
     },
 }
 
-Plotly.newPlot('myDiv', data, layout)
+Plotly.newPlot('divPolar', data, layout)
 
-// Plotlyのグラフの外でホバーした値を受けとる
 const myPlot = document.getElementById('myDiv');
 myPlot.on('plotly_hover', data => {
   s = `${data.points[0].text}`
@@ -364,7 +363,7 @@ function updateGSV() {
         }
         gsvs[type] = {}
     }
-    Plotly.newPlot('myDiv', data, layout)   
+    Plotly.newPlot('divPolar', data, layout)   
 }
 
 function updateGSA() {
