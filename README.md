@@ -8,6 +8,8 @@ Aruduino C++。
 SerialポートからNMEAメッセージを受信して値を表示するサンプル。
 HTML Web Serial API。
 
+https://masayoshikuroda.github.io/nmea/nmea.html
+
 # NMEA Parser
 
 Pythonのpandas dataframeにNMEAをインポートするライブラリ。
