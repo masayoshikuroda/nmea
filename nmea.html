@@ -5,16 +5,42 @@
 </head>
 
 <style>
+body {
+    background-color: black;
+}
+h1 {
+    color: white;
+}
+h2 {
+    color: white;
+}
+h3 {
+    color: white;
+}
+label {
+    color: white;
+}
+input {
+    color: white;
+}
 dl {
     display: flex;
     flex-wrap: wrap;
     width: 100%;
 }
 dt {
+    color: white;
     width: 30%;
 }
 dd {
+    color: white;
     width: 60%;
+}
+th {
+    color: white;
+}
+td {
+    color: white;
 }
 </style>
 
@@ -40,7 +66,7 @@ dd {
 </div>
 
 <div>
-    <h2>Navigation</h2>
+    <h2>Location</h2>
     <dl>
         <dt>Date</dt>
         <dd id="txtDate">N/A</dd>
@@ -83,9 +109,10 @@ dd {
 
 <div>
     <h2>Satellites</h2>
-
     <div id='divPolar'></div>
-
+</div>
+<div>
+    <h2>Signals</h2>
     <table>
         <thead>
             <tr>
@@ -115,7 +142,7 @@ for (i = 0; i < types.length; i++) {
     gsvs[type] = {};
     const item = {
         type: "scatterpolar", mode: "markers",
-        marker: {color: color, symbol: "dot", size: 5 },
+        marker: {color: color, symbol: "dot", size: 20 },
         hovertemplate:'%{text}',
         name: type,
     };
@@ -126,12 +153,19 @@ for (i = 0; i < types.length; i++) {
 const layout = {
     autosize: true, width: null, height: null, showlegend: true, hovermode: "x unified",
     polar: {
-      radialaxis:  { tickfont: { size: 12, color: "#ff0000" }, range: [0,100] },
-      angularaxis: { tickfont: { size: 12, color: "#0000ff" }, ticksuffix: "度" }
+      bgcolor: "rgba(0,0,0,0)",
+      radialaxis:  { tickfont: { size: 12, color: "white" }, range: [90, 0],  tickvals:[0, 30, 60, 90]  },
+      angularaxis: { tickfont: { size: 12, color: "white" }, rotation: 90, direction: "clockwise", ticksuffix: "°", tickvals:[0, 90, 180, 270] },
+      showlegend: true,
+      legend: { font: { color: 'white' } }
     },
+    plot_bgcolor:  "rgba(0,0,0,0)",
+    paper_bgcolor: "rgba(0,0,0,0)"
 }
 
-Plotly.newPlot('divPolar', data, layout)
+var config = {responsive: true}
+
+Plotly.newPlot('divPolar', data, layout, config)
 
 const myPlot = document.getElementById('myDiv');
 myPlot.on('plotly_hover', data => {
@@ -353,7 +387,7 @@ function updateGSV() {
 
             items[type].r.push(azim);
             items[type].theta.push(elv);
-            items[type].text.push(`name, azim, elev: ${id},${azim},${elv}`);
+            items[type].text.push(`name: ${id}, azim: ${azim}, elev: ${elv}`);
 
             createTd(id)
             document.getElementById('td' + id + 'Azim').innerText = azim
@@ -363,7 +397,7 @@ function updateGSV() {
         }
         gsvs[type] = {}
     }
-    Plotly.newPlot('divPolar', data, layout)   
+    Plotly.newPlot('divPolar', data, layout, config)   
 }
 
 function updateGSA() {
